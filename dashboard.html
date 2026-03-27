@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SWMS Admin – Dashboard</title>
+  <meta name="description" content="SmartCity Waste Management System – Admin Dashboard" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ====== SIDEBAR ====== -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-icon">🗑</div>
+      <span>SWMS Admin</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a class="nav-item active" data-page="dashboard" href="#">
+        <span class="nav-icon">⊞</span> Dashboard
+      </a>
+      <a class="nav-item" data-page="bin-monitoring" href="#">
+        <span class="nav-icon">🗑</span> Bin Monitoring
+      </a>
+      <a class="nav-item" data-page="alerts" href="#">
+        <span class="nav-icon">⚠</span> Alerts
+      </a>
+      <a class="nav-item" data-page="routes" href="#">
+        <span class="nav-icon">🔀</span> Route Management
+      </a>
+      <a class="nav-item" data-page="complaints" href="#">
+        <span class="nav-icon">💬</span> Complaints
+      </a>
+      <a class="nav-item" data-page="reports" href="#">
+        <span class="nav-icon">📊</span> Reports
+      </a>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <div class="system-health">
+        <div class="system-health-label">System Health</div>
+        <div class="health-row"><span>Active Sensors</span><span>98%</span></div>
+        <div class="health-track"><div class="health-fill" style="width:98%"></div></div>
+      </div>
+      <button class="settings-btn">
+        <span class="nav-icon">⚙</span> Settings
+      </button>
+    </div>
+  </aside>
+
+  <!-- Mobile sidebar overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- ====== HEADER ====== -->
+  <header class="main-header">
+    <button class="hamburger" id="hamburgerBtn" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="search-bar">
+      <span>🔍</span>
+      <input class="search-input" type="text" placeholder="Search bin ID, area, or worker..." />
+    </div>
+    <div class="header-actions">
+      <button class="header-icon-btn">
+        🔔 <span class="notif-dot"></span>
+      </button>
+      <div class="user-menu">
+        <div class="user-avatar">AR</div>
+        <div class="user-info">
+          <span class="user-name">Alex Rivera</span>
+          <span class="user-role">System Admin</span>
+        </div>
+        <span>▾</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ====== MAIN CONTENT ====== -->
+  <main class="main-content">
+
+    <!-- ============================================================ -->
+    <!-- PAGE: DASHBOARD                                               -->
+    <!-- ============================================================ -->
+    <section id="page-dashboard" class="page-section">
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-card-top">
+            <div class="stat-icon">🗑</div>
+            <span class="stat-badge badge-green">+2.5%</span>
+          </div>
+          <div class="stat-value">1,280</div>
+          <div class="stat-label">Total Bins</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top">
+            <div class="stat-icon red-icon">🚫</div>
+            <span class="stat-badge badge-red">+12%</span>
+          </div>
+          <div class="stat-value red-val">42</div>
+          <div class="stat-label">Full Bins</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top">
+            <div class="stat-icon blue-icon">👥</div>
+            <span class="stat-badge badge-blue">Steady</span>
+          </div>
+          <div class="stat-value">156</div>
+          <div class="stat-label">Active Workers</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top">
+            <div class="stat-icon yellow-icon">⚠</div>
+            <span class="stat-badge badge-gray">-8%</span>
+          </div>
+          <div class="stat-value">12</div>
+          <div class="stat-label">Complaints Today</div>
+        </div>
+      </div>
+
+      <!-- Map + Alerts row -->
+      <div class="dashboard-grid">
+        <div class="card map-card">
+          <div class="map-card-header">
+            <h3>Live Bin Status Map</h3>
+            <div class="map-legend">
+              <span class="legend-dot green-dot"></span> Empty
+              <span class="legend-dot orange-dot"></span> Medium
+              <span class="legend-dot red-dot"></span> Full
+            </div>
+          </div>
+          <div class="map-container">
+            <div id="liveMap"></div>
+          </div>
+        </div>
+
+        <div class="card alerts-card">
+          <div class="alerts-card-header">
+            <h3>Full Bin Alerts</h3>
+          </div>
+          <div class="alerts-subtitle">Require immediate attention</div>
+
+          <div class="alert-item">
+            <div class="alert-item-top">
+              <div>
+                <div class="alert-bin-id">Bin #B-1029</div>
+                <div class="alert-location">Central Park, West Entry</div>
+              </div>
+              <span class="badge-full">100% FULL</span>
+            </div>
+            <div class="alert-time">12 mins ago</div>
+            <button class="btn-assign">Assign Worker</button>
+          </div>
+
+          <div class="alert-item">
+            <div class="alert-item-top">
+              <div>
+                <div class="alert-bin-id">Bin #B-4491</div>
+                <div class="alert-location">Metro Station 5th St</div>
+              </div>
+              <span class="badge-full">95% FULL</span>
+            </div>
+            <div class="alert-time">28 mins ago</div>
+            <button class="btn-assign">Assign Worker</button>
+          </div>
+
+          <div class="alert-item">
+            <div class="alert-item-top">
+              <div>
+                <div class="alert-bin-id">Bin #B-0982</div>
+                <div class="alert-location">City Hospital South</div>
+              </div>
+              <span class="badge-full">FULL</span>
+            </div>
+            <div class="alert-time">45 mins ago</div>
+            <button class="btn-assign">Assign Worker</button>
+          </div>
+
+          <a class="view-all-link" href="#">View All Alerts</a>
+        </div>
+      </div>
+
+      <!-- Charts row -->
+      <div class="charts-row">
+        <!-- Bar chart -->
+        <div class="card chart-card">
+          <div class="chart-header">
+            <span class="chart-title">Daily Waste (Tons)</span>
+            <span class="chart-meta">···</span>
+          </div>
+          <div class="bar-chart">
+            <div class="bar-wrap"><div class="bar" style="height:55%"></div><div class="bar-label">MON</div></div>
+            <div class="bar-wrap"><div class="bar" style="height:68%"></div><div class="bar-label">TUE</div></div>
+            <div class="bar-wrap"><div class="bar" style="height:75%"></div><div class="bar-label">WED</div></div>
+            <div class="bar-wrap"><div class="bar" style="height:60%"></div><div class="bar-label">THU</div></div>
+            <div class="bar-wrap"><div class="bar" style="height:72%"></div><div class="bar-label">FRI</div></div>
+            <div class="bar-wrap"><div class="bar current" style="height:90%"></div><div class="bar-label">SAT</div></div>
+            <div class="bar-wrap"><div class="bar" style="height:45%"></div><div class="bar-label">SUN</div></div>
+          </div>
+        </div>
+
+        <!-- Line chart -->
+        <div class="card chart-card">
+          <div class="chart-header">
+            <span class="chart-title">Monthly Trends</span>
+            <span class="chart-meta">2023</span>
+          </div>
+          <div class="line-chart-wrap">
+            <svg id="monthlyTrendSvg" viewBox="0 0 280 110" preserveAspectRatio="none"></svg>
+          </div>
+        </div>
+
+        <!-- Donut chart -->
+        <div class="card chart-card">
+          <div class="chart-header">
+            <span class="chart-title">Waste Distribution</span>
+            <a href="#" style="font-size:.72rem;color:var(--green-primary);font-weight:600">Details</a>
+          </div>
+          <div class="donut-wrap">
+            <canvas id="donutWasteChart" width="100" height="100"></canvas>
+            <div class="donut-center">
+              <div class="donut-val">120t</div>
+              <div style="font-size:.6rem;color:var(--text-muted)">Total</div>
+            </div>
+          </div>
+          <div class="donut-legend">
+            <div class="donut-legend-item"><div class="donut-dot" style="background:#2d7a3a"></div> Wet Waste — 65%</div>
+            <div class="donut-legend-item"><div class="donut-dot" style="background:#c8e6c9"></div> Dry Waste — 35%</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- PAGE: BIN MONITORING                                          -->
+    <!-- ============================================================ -->
+    <section id="page-bin-monitoring" class="page-section">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1>Bin Monitoring</h1>
+          <p>Real-time level tracking across 1,248 smart bins.</p>
+        </div>
+        <div class="header-btns">
+          <button class="btn-outline">⬇ Export</button>
+          <button class="btn-green">+ Add New Bin</button>
+        </div>
+      </div>
+
+      <div class="card" style="overflow:hidden">
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+          <div class="filter-group">
+            <label>Search</label>
+            <div class="filter-input">
+              <span style="color:var(--text-muted)">🔍</span>
+              <input class="search-input" type="text" placeholder="Bin ID (e.g. BN-9921) or Street" />
+            </div>
+          </div>
+          <div class="filter-group">
+            <label>Status Filter</label>
+            <div class="filter-input">
+              <select>
+                <option>All Statuses</option>
+                <option>Healthy</option>
+                <option>Half Full</option>
+                <option>Critical</option>
+              </select>
+            </div>
+          </div>
+          <div class="filter-group">
+            <label>Area</label>
+            <div class="filter-input">
+              <select>
+                <option>All Districts</option>
+                <option>Manhattan</option>
+                <option>Brooklyn</option>
+                <option>Queens</option>
+                <option>Bronx</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table + Detail Panel -->
+        <div class="bin-layout">
+          <div class="bin-table-section">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Bin ID</th>
+                  <th>Location</th>
+                  <th>Fill Level</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="bin-row selected" data-bin-id="#BN-2091" data-fill-pct="92" data-loc="32nd Avenue, Central Park">
+                  <td><span class="bin-id-badge">#BN-2091</span></td>
+                  <td>
+                    <div class="location-row"><span class="pin-icon">📍</span>
+                      <span class="bin-location">32nd Avenue,<br/>Central Park</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="fill-bar-mini">
+                      <div class="fill-track-mini"><div class="fill-fill-mini" style="width:92%;background:linear-gradient(to right,#22c55e,#fbbf24,#ef4444)"></div></div>
+                      <span class="fill-pct" style="color:#ef4444">92%</span>
+                    </div>
+                  </td>
+                  <td><span class="status-badge status-critical">Critical</span></td>
+                </tr>
+                <tr class="bin-row" data-bin-id="#BN-1144" data-fill-pct="45" data-loc="South Mall Entrance">
+                  <td><span class="bin-id-badge">#BN-1144</span></td>
+                  <td>
+                    <div class="location-row"><span class="pin-icon">📍</span>
+                      <span class="bin-location">South Mall Entrance</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="fill-bar-mini">
+                      <div class="fill-track-mini"><div class="fill-fill-mini" style="width:45%;background:linear-gradient(to right,#22c55e,#fbbf24)"></div></div>
+                      <span class="fill-pct" style="color:#f59e0b">45%</span>
+                    </div>
+                  </td>
+                  <td><span class="status-badge status-halffull">Half Full</span></td>
+                </tr>
+                <tr class="bin-row" data-bin-id="#BN-5522" data-fill-pct="12" data-loc="Waterfront Plaza">
+                  <td><span class="bin-id-badge">#BN-5522</span></td>
+                  <td>
+                    <div class="location-row"><span class="pin-icon">📍</span>
+                      <span class="bin-location">Waterfront Plaza</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="fill-bar-mini">
+                      <div class="fill-track-mini"><div class="fill-fill-mini" style="width:12%;background:#22c55e"></div></div>
+                      <span class="fill-pct" style="color:#22c55e">12%</span>
+                    </div>
+                  </td>
+                  <td><span class="status-badge status-healthy">Healthy</span></td>
+                </tr>
+                <tr class="bin-row" data-bin-id="#BN-0042" data-fill-pct="88" data-loc="High Street Bus Stop">
+                  <td><span class="bin-id-badge">#BN-0042</span></td>
+                  <td>
+                    <div class="location-row"><span class="pin-icon">📍</span>
+                      <span class="bin-location">High Street Bus Stop</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="fill-bar-mini">
+                      <div class="fill-track-mini"><div class="fill-fill-mini" style="width:88%;background:linear-gradient(to right,#22c55e,#fbbf24,#ef4444)"></div></div>
+                      <span class="fill-pct" style="color:#ef4444">88%</span>
+                    </div>
+                  </td>
+                  <td><span class="status-badge status-critical">Critical</span></td>
+                </tr>
+                <tr class="bin-row" data-bin-id="#BN-3307" data-fill-pct="63" data-loc="Park Ave & 47th St">
+                  <td><span class="bin-id-badge">#BN-3307</span></td>
+                  <td>
+                    <div class="location-row"><span class="pin-icon">📍</span>
+                      <span class="bin-location">Park Ave & 47th St</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="fill-bar-mini">
+                      <div class="fill-track-mini"><div class="fill-fill-mini" style="width:63%;background:linear-gradient(to right,#22c55e,#fbbf24)"></div></div>
+                      <span class="fill-pct" style="color:#f59e0b">63%</span>
+                    </div>
+                  </td>
+                  <td><span class="status-badge status-halffull">Half Full</span></td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="table-pagination">
+              <span>Showing <b>5</b> of <b>1,248</b> bins</span>
+              <div class="pagination-btns">
+                <button class="pag-btn">Previous</button>
+                <button class="pag-btn">Next</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Detail Panel -->
+          <div class="bin-detail-panel" id="binDetailPanel">
+            <div class="detail-header">
+              <div>
+                <h2 id="detailBinId">Bin Details: #BN-2091</h2>
+                <div id="detailLocation" class="detail-location">32nd Avenue, Central Park</div>
+                <div class="detail-link">Full Details & Sensor Logs</div>
+              </div>
+              <button class="close-btn">✕</button>
+            </div>
+
+            <div class="map-thumb">
+              🗺
+              <div class="gps-badge">GPS: 40.7851, -73.9682</div>
+            </div>
+
+            <div>
+              <div class="sensor-level-label">
+                <span>Live Sensor Level</span>
+                <span id="detailPct" class="pct">92%</span>
+              </div>
+              <div class="fill-bar-track">
+                <div id="fillThumbPos" class="fill-bar-thumb" style="right:8%"></div>
+              </div>
+              <div class="fill-bar-ends"><span>Empty</span><span>Full</span></div>
+            </div>
+
+            <div class="sensor-mini-grid">
+              <div class="sensor-mini">
+                <div class="sensor-mini-label">Temperature</div>
+                <div class="sensor-mini-val">24.5°C</div>
+                <div class="sensor-mini-sub sub-green">↘ Normal</div>
+              </div>
+              <div class="sensor-mini">
+                <div class="sensor-mini-label">Battery Life</div>
+                <div class="sensor-mini-val">82%</div>
+                <div class="sensor-mini-sub sub-stable">▲ Stable</div>
+              </div>
+              <div class="sensor-mini">
+                <div class="sensor-mini-label">Lid Status</div>
+                <div class="sensor-mini-val">Closed</div>
+              </div>
+              <div class="sensor-mini">
+                <div class="sensor-mini-label">Odor Level</div>
+                <div class="sensor-mini-val" style="color:var(--orange)">High</div>
+              </div>
+            </div>
+
+            <div>
+              <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);margin-bottom:6px">24H Fill History</div>
+              <div class="history-bar-wrap">
+                <div style="width:10%;background:#22c55e;border-radius:2px;margin:4px 1px 0"></div>
+                <div style="width:10%;background:#4ade80;border-radius:2px;margin:10px 1px 0"></div>
+                <div style="width:10%;background:#fbbf24;border-radius:2px;margin:30px 1px 0"></div>
+                <div style="width:10%;background:#f97316;border-radius:2px;margin:40px 1px 0"></div>
+                <div style="width:10%;background:#ef4444;border-radius:2px;margin:20px 1px 0"></div>
+                <div style="width:10%;background:#ef4444;border-radius:2px;margin:10px 1px 0"></div>
+              </div>
+            </div>
+
+            <button class="btn-emergency">⚠ Assign Emergency Pickup</button>
+            <button class="btn-edit">✏ Edit Maintenance Log</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- PAGE: ALERTS                                                   -->
+    <!-- ============================================================ -->
+    <section id="page-alerts" class="page-section">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1>Alert Management</h1>
+          <p>Monitor real-time fill levels and optimize collection routes.</p>
+        </div>
+        <div class="header-btns">
+          <button class="btn-outline">≡ Filters</button>
+          <button class="btn-green">+ New Dispatch</button>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="alert-page-tabs">
+        <button class="tab-btn active" data-tab="fullbins">
+          Full Bins <span class="tab-count red">12</span>
+        </button>
+        <button class="tab-btn" data-tab="nearfull">
+          Near Full <span class="tab-count orange">45</span>
+        </button>
+        <button class="tab-btn" data-tab="unresolved">
+          Unresolved Complaints <span class="tab-count">8</span>
+        </button>
+      </div>
+
+      <div id="tab-fullbins" class="tab-content" style="display:block">
+        <div class="alert-cards-grid">
+          <div class="alert-card-item">
+            <div class="alert-card-top">
+              <div class="alert-card-id-row">
+                <span class="alert-card-id">BIN ID #BN-4092</span>
+                <span class="alert-severity-badge severity-critical">CRITICAL</span>
+              </div>
+              <div class="alert-card-loc">📍 5th Ave &amp; 23rd St</div>
+              <div class="fill-pct-big red-val">98%</div>
+              <div class="fill-track-alert"><div class="fill-fill-alert" style="width:98%;background:#ef4444"></div></div>
+            </div>
+            <div class="alert-card-img" style="background:#7a8a79">
+              🗑<div class="img-timestamp">⏱ Alert triggered 12 mins ago</div>
+            </div>
+            <div class="alert-card-footer">
+              <button class="btn-assign-dropdown">Assign Worker ▾</button>
+              <button class="btn-more">⋯</button>
+            </div>
+          </div>
+
+          <div class="alert-card-item">
+            <div class="alert-card-top">
+              <div class="alert-card-id-row">
+                <span class="alert-card-id">BIN ID #BN-8821</span>
+                <span class="alert-severity-badge severity-high">HIGH</span>
+              </div>
+              <div class="alert-card-loc">📍 Main St Park Entrance</div>
+              <div class="fill-pct-big orange-val">92%</div>
+              <div class="fill-track-alert"><div class="fill-fill-alert" style="width:92%;background:#f59e0b"></div></div>
+            </div>
+            <div class="alert-card-img" style="background:#5a7a5a">
+              🗑<div class="img-timestamp">⏱ Alert triggered 45 mins ago</div>
+            </div>
+            <div class="alert-card-footer">
+              <button class="btn-assign-dropdown">Assign Worker ▾</button>
+              <button class="btn-more">⋯</button>
+            </div>
+          </div>
+
+          <div class="alert-card-item">
+            <div class="alert-card-top">
+              <div class="alert-card-id-row">
+                <span class="alert-card-id">BIN ID #BN-1029</span>
+                <span class="alert-severity-badge severity-critical">CRITICAL</span>
+              </div>
+              <div class="alert-card-loc">📍 Central Metro Station</div>
+              <div class="fill-pct-big red-val">100%</div>
+              <div class="fill-track-alert"><div class="fill-fill-alert" style="width:100%;background:#ef4444"></div></div>
+            </div>
+            <div class="alert-card-img" style="background:#4a5a4a">
+              🗑<div class="img-timestamp">⏱ Alert triggered 1 hour ago</div>
+            </div>
+            <div class="alert-card-footer">
+              <button class="btn-assign-dropdown">Assign Worker ▾</button>
+              <button class="btn-more">⋯</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hotspot map section -->
+        <div class="hotspot-section">
+          <div class="hotspot-map">
+            <div id="hotspotMap"></div>
+          </div>
+          <div class="hotspot-info">
+            <h3>Hotspot Detected</h3>
+            <p>High volume of alerts concentrated in the Central District. Suggested reroute for Truck #4.</p>
+            <button class="btn-optimize">📊 Optimize Route</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-nearfull" class="tab-content" style="display:none">
+        <div style="padding:40px;text-align:center;color:var(--text-muted)">
+          <div style="font-size:2rem;margin-bottom:12px">⚠</div>
+          <div style="font-size:.95rem;font-weight:600">45 Bins Near Capacity</div>
+          <div style="font-size:.82rem;margin-top:6px">These bins are between 70–89% full and require attention within 4 hours.</div>
+        </div>
+      </div>
+
+      <div id="tab-unresolved" class="tab-content" style="display:none">
+        <div style="padding:40px;text-align:center;color:var(--text-muted)">
+          <div style="font-size:2rem;margin-bottom:12px">💬</div>
+          <div style="font-size:.95rem;font-weight:600">8 Unresolved Complaints</div>
+          <div style="font-size:.82rem;margin-top:6px">Citizen complaints require review and resolution.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- PAGE: ROUTES (placeholder)                                    -->
+    <!-- ============================================================ -->
+    <section id="page-routes" class="page-section">
+      <div style="padding:60px;text-align:center;color:var(--text-muted)">
+        <div style="font-size:3rem;margin-bottom:16px">🔀</div>
+        <h2 style="margin-bottom:8px;color:var(--text-primary)">Route Management</h2>
+        <p style="font-size:.88rem">AI-optimized collection routes based on real-time bin data. Coming soon.</p>
+        <button class="btn-green" style="margin-top:20px;display:inline-flex">View Route Map</button>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- PAGE: COMPLAINTS (placeholder)                                -->
+    <!-- ============================================================ -->
+    <section id="page-complaints" class="page-section">
+      <div style="padding:60px;text-align:center;color:var(--text-muted)">
+        <div style="font-size:3rem;margin-bottom:16px">💬</div>
+        <h2 style="margin-bottom:8px;color:var(--text-primary)">Complaints</h2>
+        <p style="font-size:.88rem">Manage and resolve citizen complaints. 12 open today.</p>
+        <button class="btn-green" style="margin-top:20px;display:inline-flex">View All Complaints</button>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- PAGE: REPORTS                                                  -->
+    <!-- ============================================================ -->
+    <section id="page-reports" class="page-section">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1>Reports &amp; Analytics</h1>
+          <p>Real-time data and historical waste management trends</p>
+        </div>
+        <div class="header-btns">
+          <button class="btn-outline">📅 Last 30 Days ▾</button>
+          <button class="btn-green">⬇ Download PDF</button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="reports-stat-grid">
+        <div class="stat-card">
+          <div class="stat-card-top">
+            <div class="stat-icon">🗑</div>
+            <span class="stat-badge badge-green">↑ 5.2%</span>
+          </div>
+          <div class="stat-value">1,284</div>
+          <div class="stat-label">Total Waste Collected (Tons)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top">
+            <div class="stat-icon blue-icon">💧</div>
+            <span class="stat-badge badge-red">↓ 2.1%</span>
+          </div>
+          <div class="stat-value">64%</div>
+          <div class="stat-label">Avg. Fill Level</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top">
+            <div class="stat-icon" style="background:#f3e8ff">👷</div>
+            <span class="stat-badge badge-green">↑ 1.5%</span>
+          </div>
+          <div class="stat-value">89.2%</div>
+          <div class="stat-label">Worker Efficiency</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top">
+            <div class="stat-icon yellow-icon">⚠</div>
+            <span class="stat-badge badge-gray">↓ 10%</span>
+          </div>
+          <div class="stat-value">12</div>
+          <div class="stat-label">Active Complaints</div>
+        </div>
+      </div>
+
+      <!-- Top charts -->
+      <div class="reports-charts-top">
+        <div class="card chart-card">
+          <div class="chart-header">
+            <span class="chart-title">Daily Waste Collected</span>
+            <span class="chart-meta">···</span>
+          </div>
+          <div class="bar-chart" style="height:150px">
+            <div class="bar-wrap"><div class="bar" style="height:40%"></div><div class="bar-label">MON</div></div>
+            <div class="bar-wrap"><div class="bar" style="height:58%"></div><div class="bar-label">TUE</div></div>
+            <div class="bar-wrap"><div class="bar" style="height:72%"></div><div class="bar-label">WED</div></div>
+            <div class="bar-wrap"><div class="bar" style="height:50%"></div><div class="bar-label">THU</div></div>
+            <div class="bar-wrap"><div class="bar" style="height:65%"></div><div class="bar-label">FRI</div></div>
+            <div class="bar-wrap"><div class="bar current" style="height:95%"></div><div class="bar-label">SAT</div></div>
+            <div class="bar-wrap"><div class="bar" style="height:38%"></div><div class="bar-label">SUN</div></div>
+          </div>
+        </div>
+
+        <div class="card chart-card">
+          <div class="chart-header">
+            <span class="chart-title">Monthly Waste Trend</span>
+            <div style="display:flex;gap:10px;align-items:center;font-size:.72rem">
+              <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:2px;background:var(--green-primary);border-radius:2px"></span> 2023</span>
+              <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:2px;background:#cbd5e1;border-radius:2px;border:1px dashed #94a3b8"></span> 2022</span>
+            </div>
+          </div>
+          <div class="line-chart-wrap" style="height:150px">
+            <svg id="reportTrendSvg" viewBox="0 0 280 140" preserveAspectRatio="none"></svg>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:.65rem;color:var(--text-muted);padding-top:4px">
+            <span>JAN</span><span>MAR</span><span>MAY</span><span>JUL</span><span>SEP</span><span>NOV</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom charts -->
+      <div class="reports-charts-bottom">
+        <div class="card chart-card">
+          <div class="chart-header">
+            <span class="chart-title">Top Performing Collectors</span>
+            <a href="#" style="font-size:.75rem;font-weight:600;color:var(--green-primary)">View All</a>
+          </div>
+          <div class="collector-list">
+            <div class="collector-item">
+              <div class="collector-row"><span>Marcus Wright</span><span class="collector-pct">98.4%</span></div>
+              <div class="collector-track"><div class="collector-fill" style="width:98.4%"></div></div>
+            </div>
+            <div class="collector-item">
+              <div class="collector-row"><span>Sarah Jenkins</span><span class="collector-pct">94.2%</span></div>
+              <div class="collector-track"><div class="collector-fill" style="width:94.2%"></div></div>
+            </div>
+            <div class="collector-item">
+              <div class="collector-row"><span>Elena Rodriguez</span><span class="collector-pct">91.8%</span></div>
+              <div class="collector-track"><div class="collector-fill" style="width:91.8%"></div></div>
+            </div>
+            <div class="collector-item">
+              <div class="collector-row"><span>Johnathan Doe</span><span class="collector-pct">88.5%</span></div>
+              <div class="collector-track"><div class="collector-fill" style="width:88.5%"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card chart-card">
+          <div class="chart-header">
+            <span class="chart-title">Waste Concentration Map</span>
+            <span style="display:flex;align-items:center;gap:5px;font-size:.72rem;color:var(--red)">⚫ Critical Alerts</span>
+          </div>
+          <div class="conc-map">
+            <div id="concMap"></div>
+            <div class="conc-legend">
+              <div class="conc-legend-title">Alert Density</div>
+              <div class="conc-legend-row">
+                <div class="conc-dot" style="background:#22c55e"></div> Low
+                <div class="conc-dot" style="background:#f59e0b;margin-left:6px"></div> Med
+                <div class="conc-dot" style="background:#ef4444;margin-left:6px"></div> High
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
