@@ -9,3 +9,10 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Node
+node_modules/
+
+# Database
+*.sqlite
+*.db

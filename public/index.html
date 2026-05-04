@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SWMS – Login</title>
+  <meta name="description" content="SmartCity Waste Management System – Secure Login Portal" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="login-page">
+
+  <div class="login-card">
+    <!-- Left Brand Panel -->
+    <div class="login-left">
+      <div class="login-brand">
+        <div class="login-brand-icon">🗑</div>
+        <span>SmartCity Waste</span>
+      </div>
+      <div class="login-hero">🗑️</div>
+      <div class="login-tagline">
+        <h2>Towards a Cleaner Future</h2>
+        <p>Join our mission to manage urban waste efficiently through smart IoT technology and citizen participation.</p>
+      </div>
+    </div>
+
+    <!-- Right Form Panel -->
+    <div class="login-right">
+      <h1>Welcome Back</h1>
+      <p class="subtitle">Please enter your details to sign in.</p>
+
+      <!-- Error banner (hidden by default) -->
+      <div id="loginError" style="display:none;background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;padding:10px 14px;border-radius:8px;margin-bottom:16px;font-size:.875rem;"></div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label class="form-label" for="emailInput">Email Address</label>
+          <div class="input-wrap">
+            <span class="icon">✉</span>
+            <input id="emailInput" type="email" placeholder="name@city.gov" value="admin@swms.gov" required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="form-label-row">
+            <label class="form-label" for="pwInput">Password</label>
+            <a class="forgot-link" href="#">Forgot password?</a>
+          </div>
+          <div class="input-wrap">
+            <span class="icon">🔒</span>
+            <input id="pwInput" type="password" placeholder="••••••••" value="admin123" required />
+            <button type="button" id="togglePw" class="toggle-pw">👁</button>
+          </div>
+        </div>
+
+        <label class="remember-row">
+          <input type="checkbox" id="rememberMe" /> Remember me for 30 days
+        </label>
+
+        <button type="submit" class="btn-primary" id="loginBtn">Log In to Dashboard</button>
+      </form>
+
+      <p class="login-footer">
+        Don't have an account?
+        <a href="#" id="showRegister">Register here</a>
+      </p>
+
+      <!-- Register modal (inline, hidden) -->
+      <div id="registerSection" style="display:none;margin-top:20px;border-top:1px solid #e2e8f0;padding-top:20px;">
+        <h3 style="font-size:1rem;font-weight:700;margin-bottom:12px;">Create Account</h3>
+        <div id="registerError" style="display:none;background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;padding:10px 14px;border-radius:8px;margin-bottom:12px;font-size:.875rem;"></div>
+        <form id="registerForm">
+          <div class="form-group">
+            <label class="form-label">Full Name</label>
+            <div class="input-wrap"><input id="regName" type="text" placeholder="Your name" required /></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <div class="input-wrap"><input id="regEmail" type="email" placeholder="name@city.gov" required /></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <div class="input-wrap"><input id="regPass" type="password" placeholder="Min 6 chars" required /></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Role</label>
+            <div class="input-wrap">
+              <select id="regRole">
+                <option value="citizen">Citizen</option>
+                <option value="worker">Field Worker</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="btn-primary">Create Account</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <p class="login-copyright">© 2024 SmartCity Waste Management Inc. All rights reserved.</p>
+
+  <script>
+    // ── Toggle password visibility ──────────────────────────────
+    document.getElementById('togglePw').addEventListener('click', () => {
+      const pw = document.getElementById('pwInput');
+      pw.type = pw.type === 'password' ? 'text' : 'password';
+      document.getElementById('togglePw').textContent = pw.type === 'password' ? '👁' : '🙈';
+    });
+
+    // ── Show/hide register section ─────────────────────────────
+    document.getElementById('showRegister').addEventListener('click', e => {
+      e.preventDefault();
+      const sec = document.getElementById('registerSection');
+      sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
+    });
+
+    // ── Helper: show error ─────────────────────────────────────
+    function showError(elId, msg) {
+      const el = document.getElementById(elId);
+      el.textContent = msg;
+      el.style.display = 'block';
+      setTimeout(() => el.style.display = 'none', 5000);
+    }
+
+    // ── LOGIN ──────────────────────────────────────────────────
+    document.getElementById('loginForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const btn = document.getElementById('loginBtn');
+      btn.textContent = 'Logging in…';
+      btn.disabled = true;
+
+      const email    = document.getElementById('emailInput').value.trim();
+      const password = document.getElementById('pwInput').value;
+
+      try {
+        const res  = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          showError('loginError', data.error || 'Login failed');
+          btn.textContent = 'Log In to Dashboard';
+          btn.disabled = false;
+          return;
+        }
+
+        // Store JWT + user info
+        localStorage.setItem('swms_token', data.token);
+        localStorage.setItem('swms_user',  JSON.stringify(data.user));
+
+        // Redirect to dashboard
+        window.location.href = 'dashboard.html';
+
+      } catch (err) {
+        showError('loginError', 'Server unreachable. Is the server running?');
+        btn.textContent = 'Log In to Dashboard';
+        btn.disabled = false;
+      }
+    });
+
+    // ── REGISTER ───────────────────────────────────────────────
+    document.getElementById('registerForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const name     = document.getElementById('regName').value.trim();
+      const email    = document.getElementById('regEmail').value.trim();
+      const password = document.getElementById('regPass').value;
+      const role     = document.getElementById('regRole').value;
+
+      try {
+        const res  = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password, role })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          showError('registerError', data.error || 'Registration failed');
+          return;
+        }
+
+        localStorage.setItem('swms_token', data.token);
+        localStorage.setItem('swms_user',  JSON.stringify(data.user));
+        window.location.href = 'dashboard.html';
+
+      } catch (err) {
+        showError('registerError', 'Server unreachable.');
+      }
+    });
+  </script>
+</body>
+</html>

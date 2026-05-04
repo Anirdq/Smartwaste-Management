@@ -63,7 +63,7 @@
       <input class="search-input" type="text" placeholder="Search bin ID, area, or worker..." />
     </div>
     <div class="header-actions">
-      <button class="header-icon-btn">
+      <button class="header-icon-btn" title="Alerts">
         🔔 <span class="notif-dot"></span>
       </button>
       <div class="user-menu">
@@ -74,6 +74,7 @@
         </div>
         <span>▾</span>
       </div>
+      <button id="logoutBtn" class="btn-outline" style="margin-left:8px;padding:6px 14px;font-size:.8rem">⏻ Logout</button>
     </div>
   </header>
 
@@ -88,34 +89,34 @@
         <div class="stat-card">
           <div class="stat-card-top">
             <div class="stat-icon">🗑</div>
-            <span class="stat-badge badge-green">+2.5%</span>
+            <span class="stat-badge badge-green" id="dash_total_badge">Live</span>
           </div>
-          <div class="stat-value">1,280</div>
+          <div class="stat-value" id="dash_total_bins">—</div>
           <div class="stat-label">Total Bins</div>
         </div>
         <div class="stat-card">
           <div class="stat-card-top">
             <div class="stat-icon red-icon">🚫</div>
-            <span class="stat-badge badge-red">+12%</span>
+            <span class="stat-badge badge-red" id="dash_full_badge">Live</span>
           </div>
-          <div class="stat-value red-val">42</div>
+          <div class="stat-value red-val" id="dash_full_bins">—</div>
           <div class="stat-label">Full Bins</div>
         </div>
         <div class="stat-card">
           <div class="stat-card-top">
-            <div class="stat-icon blue-icon">👥</div>
-            <span class="stat-badge badge-blue">Steady</span>
+            <div class="stat-icon blue-icon">🚛</div>
+            <span class="stat-badge badge-blue" id="dash_trucks_badge">Live</span>
           </div>
-          <div class="stat-value">156</div>
-          <div class="stat-label">Active Workers</div>
+          <div class="stat-value" id="dash_trucks_active">—</div>
+          <div class="stat-label">Active Trucks</div>
         </div>
         <div class="stat-card">
           <div class="stat-card-top">
             <div class="stat-icon yellow-icon">⚠</div>
-            <span class="stat-badge badge-gray">-8%</span>
+            <span class="stat-badge badge-gray" id="dash_comp_badge">Live</span>
           </div>
-          <div class="stat-value">12</div>
-          <div class="stat-label">Complaints Today</div>
+          <div class="stat-value" id="dash_open_comp">—</div>
+          <div class="stat-label">Open Complaints</div>
         </div>
       </div>
 
@@ -139,45 +140,12 @@
           <div class="alerts-card-header">
             <h3>Full Bin Alerts</h3>
           </div>
-          <div class="alerts-subtitle">Require immediate attention</div>
-
-          <div class="alert-item">
-            <div class="alert-item-top">
-              <div>
-                <div class="alert-bin-id">Bin #B-1029</div>
-                <div class="alert-location">Central Park, West Entry</div>
-              </div>
-              <span class="badge-full">100% FULL</span>
-            </div>
-            <div class="alert-time">12 mins ago</div>
-            <button class="btn-assign">Assign Worker</button>
+          <div class="alerts-subtitle">Live IoT feed – updates every 7 seconds</div>
+          <!-- alertsFeed is dynamically populated by app.js via WebSocket + API -->
+          <div id="alertsFeed" style="display:flex;flex-direction:column;gap:10px;max-height:320px;overflow-y:auto">
+            <p style="color:var(--text-muted);font-size:.85rem;padding:10px">Loading alerts…</p>
           </div>
-
-          <div class="alert-item">
-            <div class="alert-item-top">
-              <div>
-                <div class="alert-bin-id">Bin #B-4491</div>
-                <div class="alert-location">Metro Station 5th St</div>
-              </div>
-              <span class="badge-full">95% FULL</span>
-            </div>
-            <div class="alert-time">28 mins ago</div>
-            <button class="btn-assign">Assign Worker</button>
-          </div>
-
-          <div class="alert-item">
-            <div class="alert-item-top">
-              <div>
-                <div class="alert-bin-id">Bin #B-0982</div>
-                <div class="alert-location">City Hospital South</div>
-              </div>
-              <span class="badge-full">FULL</span>
-            </div>
-            <div class="alert-time">45 mins ago</div>
-            <button class="btn-assign">Assign Worker</button>
-          </div>
-
-          <a class="view-all-link" href="#">View All Alerts</a>
+          <a class="view-all-link" href="#" onclick="event.preventDefault();document.querySelector('.nav-item[data-page=alerts]').click()">View All Alerts →</a>
         </div>
       </div>
 
@@ -242,8 +210,8 @@
           <p>Real-time level tracking across 1,248 smart bins.</p>
         </div>
         <div class="header-btns">
-          <button class="btn-outline">⬇ Export</button>
-          <button class="btn-green">+ Add New Bin</button>
+          <button class="btn-outline" id="exportBinsBtn">⬇ Export CSV</button>
+          <button class="btn-green" id="addNewBinBtn">+ Add New Bin</button>
         </div>
       </div>
 
@@ -260,11 +228,11 @@
           <div class="filter-group">
             <label>Status Filter</label>
             <div class="filter-input">
-              <select>
-                <option>All Statuses</option>
-                <option>Healthy</option>
-                <option>Half Full</option>
-                <option>Critical</option>
+              <select id="binStatusFilter">
+                <option value="">All Statuses</option>
+                <option value="empty">Healthy (Empty)</option>
+                <option value="medium">Half Full</option>
+                <option value="full">Critical (Full)</option>
               </select>
             </div>
           </div>
@@ -294,82 +262,8 @@
                   <th>Status</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr class="bin-row selected" data-bin-id="#BN-2091" data-fill-pct="92" data-loc="32nd Avenue, Central Park">
-                  <td><span class="bin-id-badge">#BN-2091</span></td>
-                  <td>
-                    <div class="location-row"><span class="pin-icon">📍</span>
-                      <span class="bin-location">32nd Avenue,<br/>Central Park</span>
-                    </div>
-                  </td>
-                  <td>
-                    <div class="fill-bar-mini">
-                      <div class="fill-track-mini"><div class="fill-fill-mini" style="width:92%;background:linear-gradient(to right,#22c55e,#fbbf24,#ef4444)"></div></div>
-                      <span class="fill-pct" style="color:#ef4444">92%</span>
-                    </div>
-                  </td>
-                  <td><span class="status-badge status-critical">Critical</span></td>
-                </tr>
-                <tr class="bin-row" data-bin-id="#BN-1144" data-fill-pct="45" data-loc="South Mall Entrance">
-                  <td><span class="bin-id-badge">#BN-1144</span></td>
-                  <td>
-                    <div class="location-row"><span class="pin-icon">📍</span>
-                      <span class="bin-location">South Mall Entrance</span>
-                    </div>
-                  </td>
-                  <td>
-                    <div class="fill-bar-mini">
-                      <div class="fill-track-mini"><div class="fill-fill-mini" style="width:45%;background:linear-gradient(to right,#22c55e,#fbbf24)"></div></div>
-                      <span class="fill-pct" style="color:#f59e0b">45%</span>
-                    </div>
-                  </td>
-                  <td><span class="status-badge status-halffull">Half Full</span></td>
-                </tr>
-                <tr class="bin-row" data-bin-id="#BN-5522" data-fill-pct="12" data-loc="Waterfront Plaza">
-                  <td><span class="bin-id-badge">#BN-5522</span></td>
-                  <td>
-                    <div class="location-row"><span class="pin-icon">📍</span>
-                      <span class="bin-location">Waterfront Plaza</span>
-                    </div>
-                  </td>
-                  <td>
-                    <div class="fill-bar-mini">
-                      <div class="fill-track-mini"><div class="fill-fill-mini" style="width:12%;background:#22c55e"></div></div>
-                      <span class="fill-pct" style="color:#22c55e">12%</span>
-                    </div>
-                  </td>
-                  <td><span class="status-badge status-healthy">Healthy</span></td>
-                </tr>
-                <tr class="bin-row" data-bin-id="#BN-0042" data-fill-pct="88" data-loc="High Street Bus Stop">
-                  <td><span class="bin-id-badge">#BN-0042</span></td>
-                  <td>
-                    <div class="location-row"><span class="pin-icon">📍</span>
-                      <span class="bin-location">High Street Bus Stop</span>
-                    </div>
-                  </td>
-                  <td>
-                    <div class="fill-bar-mini">
-                      <div class="fill-track-mini"><div class="fill-fill-mini" style="width:88%;background:linear-gradient(to right,#22c55e,#fbbf24,#ef4444)"></div></div>
-                      <span class="fill-pct" style="color:#ef4444">88%</span>
-                    </div>
-                  </td>
-                  <td><span class="status-badge status-critical">Critical</span></td>
-                </tr>
-                <tr class="bin-row" data-bin-id="#BN-3307" data-fill-pct="63" data-loc="Park Ave & 47th St">
-                  <td><span class="bin-id-badge">#BN-3307</span></td>
-                  <td>
-                    <div class="location-row"><span class="pin-icon">📍</span>
-                      <span class="bin-location">Park Ave & 47th St</span>
-                    </div>
-                  </td>
-                  <td>
-                    <div class="fill-bar-mini">
-                      <div class="fill-track-mini"><div class="fill-fill-mini" style="width:63%;background:linear-gradient(to right,#22c55e,#fbbf24)"></div></div>
-                      <span class="fill-pct" style="color:#f59e0b">63%</span>
-                    </div>
-                  </td>
-                  <td><span class="status-badge status-halffull">Half Full</span></td>
-                </tr>
+              <tbody id="binsTableBody">
+                <!-- Dynamically populated by app.js -->
               </tbody>
             </table>
             <div class="table-pagination">
@@ -377,19 +271,21 @@
               <div class="pagination-btns">
                 <button class="pag-btn">Previous</button>
                 <button class="pag-btn">Next</button>
+                <button class="pag-btn" id="prevPageBtn">Previous</button>
+                <button class="pag-btn" id="nextPageBtn">Next</button>
               </div>
             </div>
           </div>
 
           <!-- Detail Panel -->
-          <div class="bin-detail-panel" id="binDetailPanel">
+          <div class="bin-detail-panel" id="binDetailPanel" style="display:none">
             <div class="detail-header">
               <div>
-                <h2 id="detailBinId">Bin Details: #BN-2091</h2>
-                <div id="detailLocation" class="detail-location">32nd Avenue, Central Park</div>
-                <div class="detail-link">Full Details & Sensor Logs</div>
+                <h2 id="detailBinId">Bin Details</h2>
+                <div id="detailLocation" class="detail-location">—</div>
+                <div class="detail-link" id="detailGps" style="font-size:.72rem;color:var(--text-muted)">GPS: —</div>
               </div>
-              <button class="close-btn">✕</button>
+              <button class="close-btn" id="closeBinPanel">✕</button>
             </div>
 
             <div class="map-thumb">
@@ -441,8 +337,8 @@
               </div>
             </div>
 
-            <button class="btn-emergency">⚠ Assign Emergency Pickup</button>
-            <button class="btn-edit">✏ Edit Maintenance Log</button>
+            <button class="btn-emergency" id="emergencyPickupBtn">⚠ Assign Emergency Pickup</button>
+            <button class="btn-edit" id="editMaintenanceBtn">✏ Edit Maintenance Log</button>
           </div>
         </div>
       </div>
@@ -466,74 +362,20 @@
       <!-- Tabs -->
       <div class="alert-page-tabs">
         <button class="tab-btn active" data-tab="fullbins">
-          Full Bins <span class="tab-count red">12</span>
+          Full Bins <span class="tab-count red" id="tab_count_full">0</span>
         </button>
         <button class="tab-btn" data-tab="nearfull">
-          Near Full <span class="tab-count orange">45</span>
+          Near Full <span class="tab-count orange" id="tab_count_nearfull">0</span>
         </button>
         <button class="tab-btn" data-tab="unresolved">
-          Unresolved Complaints <span class="tab-count">8</span>
+          Unresolved Complaints <span class="tab-count" id="tab_count_unresolved">0</span>
         </button>
       </div>
 
       <div id="tab-fullbins" class="tab-content" style="display:block">
-        <div class="alert-cards-grid">
-          <div class="alert-card-item">
-            <div class="alert-card-top">
-              <div class="alert-card-id-row">
-                <span class="alert-card-id">BIN ID #BN-4092</span>
-                <span class="alert-severity-badge severity-critical">CRITICAL</span>
-              </div>
-              <div class="alert-card-loc">📍 5th Ave &amp; 23rd St</div>
-              <div class="fill-pct-big red-val">98%</div>
-              <div class="fill-track-alert"><div class="fill-fill-alert" style="width:98%;background:#ef4444"></div></div>
-            </div>
-            <div class="alert-card-img" style="background:#7a8a79">
-              🗑<div class="img-timestamp">⏱ Alert triggered 12 mins ago</div>
-            </div>
-            <div class="alert-card-footer">
-              <button class="btn-assign-dropdown">Assign Worker ▾</button>
-              <button class="btn-more">⋯</button>
-            </div>
-          </div>
-
-          <div class="alert-card-item">
-            <div class="alert-card-top">
-              <div class="alert-card-id-row">
-                <span class="alert-card-id">BIN ID #BN-8821</span>
-                <span class="alert-severity-badge severity-high">HIGH</span>
-              </div>
-              <div class="alert-card-loc">📍 Main St Park Entrance</div>
-              <div class="fill-pct-big orange-val">92%</div>
-              <div class="fill-track-alert"><div class="fill-fill-alert" style="width:92%;background:#f59e0b"></div></div>
-            </div>
-            <div class="alert-card-img" style="background:#5a7a5a">
-              🗑<div class="img-timestamp">⏱ Alert triggered 45 mins ago</div>
-            </div>
-            <div class="alert-card-footer">
-              <button class="btn-assign-dropdown">Assign Worker ▾</button>
-              <button class="btn-more">⋯</button>
-            </div>
-          </div>
-
-          <div class="alert-card-item">
-            <div class="alert-card-top">
-              <div class="alert-card-id-row">
-                <span class="alert-card-id">BIN ID #BN-1029</span>
-                <span class="alert-severity-badge severity-critical">CRITICAL</span>
-              </div>
-              <div class="alert-card-loc">📍 Central Metro Station</div>
-              <div class="fill-pct-big red-val">100%</div>
-              <div class="fill-track-alert"><div class="fill-fill-alert" style="width:100%;background:#ef4444"></div></div>
-            </div>
-            <div class="alert-card-img" style="background:#4a5a4a">
-              🗑<div class="img-timestamp">⏱ Alert triggered 1 hour ago</div>
-            </div>
-            <div class="alert-card-footer">
-              <button class="btn-assign-dropdown">Assign Worker ▾</button>
-              <button class="btn-more">⋯</button>
-            </div>
-          </div>
+        <div class="alert-cards-grid" id="alertCardsGrid">
+          <!-- Dynamically populated from /api/alerts -->
+          <p style="color:var(--text-muted);padding:20px;grid-column:1/-1">Loading full bin alerts…</p>
         </div>
 
         <!-- Hotspot map section -->
@@ -550,43 +392,155 @@
       </div>
 
       <div id="tab-nearfull" class="tab-content" style="display:none">
-        <div style="padding:40px;text-align:center;color:var(--text-muted)">
-          <div style="font-size:2rem;margin-bottom:12px">⚠</div>
-          <div style="font-size:.95rem;font-weight:600">45 Bins Near Capacity</div>
-          <div style="font-size:.82rem;margin-top:6px">These bins are between 70–89% full and require attention within 4 hours.</div>
+        <div class="alert-cards-grid" id="nearFullGrid">
+          <p style="color:var(--text-muted);padding:20px;grid-column:1/-1">Loading near-full bins…</p>
         </div>
       </div>
 
       <div id="tab-unresolved" class="tab-content" style="display:none">
-        <div style="padding:40px;text-align:center;color:var(--text-muted)">
-          <div style="font-size:2rem;margin-bottom:12px">💬</div>
-          <div style="font-size:.95rem;font-weight:600">8 Unresolved Complaints</div>
-          <div style="font-size:.82rem;margin-top:6px">Citizen complaints require review and resolution.</div>
+        <div class="alert-cards-grid" id="unresolvedGrid">
+          <p style="color:var(--text-muted);padding:20px;grid-column:1/-1">Loading unresolved complaints…</p>
         </div>
       </div>
     </section>
 
     <!-- ============================================================ -->
-    <!-- PAGE: ROUTES (placeholder)                                    -->
+    <!-- PAGE: ROUTES                                                  -->
     <!-- ============================================================ -->
     <section id="page-routes" class="page-section">
-      <div style="padding:60px;text-align:center;color:var(--text-muted)">
-        <div style="font-size:3rem;margin-bottom:16px">🔀</div>
-        <h2 style="margin-bottom:8px;color:var(--text-primary)">Route Management</h2>
-        <p style="font-size:.88rem">AI-optimized collection routes based on real-time bin data. Coming soon.</p>
-        <button class="btn-green" style="margin-top:20px;display:inline-flex">View Route Map</button>
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1>Route Management & Fleet Tracking</h1>
+          <p>Live GPS tracking and AI-optimized collection routes.</p>
+        </div>
+        <div class="header-btns">
+          <button class="btn-outline">📊 Analytics</button>
+          <button class="btn-green btn-optimize">⚡ Run AI Optimization</button>
+        </div>
+      </div>
+
+      <div class="dashboard-grid">
+        <!-- Fleet Sidebar -->
+        <div class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+          <h3 style="font-size: 1rem; font-weight: 700;">Active Fleet</h3>
+          <div id="fleetContainer" style="display: flex; flex-direction: column; gap: 16px;">
+            <!-- Dynamically populated by app.js -->
+          </div>
+        </div>
+
+        <!-- Route Map Container -->
+        <div class="card map-card" style="display: flex; flex-direction: column;">
+          <div class="map-card-header">
+            <h3>Live Route Map</h3>
+            <div class="map-legend">
+              <span class="legend-dot" style="background:var(--blue)"></span> Route A
+              <span class="legend-dot" style="background:var(--green-primary)"></span> Route B
+            </div>
+          </div>
+          <div class="map-container" style="flex: 1; min-height: 400px;">
+            <div id="routeMap" style="width: 100%; height: 100%;"></div>
+          </div>
+        </div>
       </div>
     </section>
 
     <!-- ============================================================ -->
-    <!-- PAGE: COMPLAINTS (placeholder)                                -->
+    <!-- PAGE: COMPLAINTS                                              -->
     <!-- ============================================================ -->
     <section id="page-complaints" class="page-section">
-      <div style="padding:60px;text-align:center;color:var(--text-muted)">
-        <div style="font-size:3rem;margin-bottom:16px">💬</div>
-        <h2 style="margin-bottom:8px;color:var(--text-primary)">Complaints</h2>
-        <p style="font-size:.88rem">Manage and resolve citizen complaints. 12 open today.</p>
-        <button class="btn-green" style="margin-top:20px;display:inline-flex">View All Complaints</button>
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1>Citizen Complaints</h1>
+          <p>Review, assign, and resolve reported public waste issues.</p>
+        </div>
+        <div class="header-btns">
+          <button class="btn-outline" id="compFilterBtn">📅 Last 7 Days ▾</button>
+          <button class="btn-green" id="newTicketBtn">+ New Ticket</button>
+        </div>
+      </div>
+
+      <div class="stat-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 20px;">
+        <div class="stat-card">
+          <div class="stat-card-top">
+            <div class="stat-icon red-icon">⚠</div>
+            <span class="stat-badge badge-red" id="comp_open_badge">Live</span>
+          </div>
+          <div class="stat-value red-val" id="comp_open_count">—</div>
+          <div class="stat-label">Open Complaints</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top">
+            <div class="stat-icon yellow-icon">⌛</div>
+          </div>
+          <div class="stat-value" id="comp_inprogress_count">—</div>
+          <div class="stat-label">In Progress</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top">
+            <div class="stat-icon">✅</div>
+          </div>
+          <div class="stat-value" id="comp_resolved_count">—</div>
+          <div class="stat-label">Resolved This Week</div>
+        </div>
+      </div>
+
+      <div class="card" style="overflow:hidden">
+        <div class="filter-bar">
+          <div class="filter-group">
+            <label>Search Tickets</label>
+            <div class="filter-input">
+              <span style="color:var(--text-muted)">🔍</span>
+              <input class="search-input" type="text" placeholder="Ticket ID, Name, or area" />
+            </div>
+          </div>
+          <div class="filter-group">
+            <label>Status</label>
+            <div class="filter-input">
+              <select id="compStatusFilter">
+                <option value="">All Statuses</option>
+                <option value="Open">Open</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Resolved">Resolved</option>
+              </select>
+            </div>
+          </div>
+          <div class="filter-group">
+            <label>Priority</label>
+            <div class="filter-input">
+              <select>
+                <option>All</option>
+                <option>High</option>
+                <option>Medium</option>
+                <option>Low</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="bin-table-section">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Ticket ID</th>
+                <th>Citizen Details</th>
+                <th>Issue Category</th>
+                <th>Reported On</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="complaintsTableBody">
+              <!-- Dynamically populated by app.js -->
+            </tbody>
+          </table>
+          <div class="table-pagination">
+            <span>Showing <b>4</b> of <b>12</b> open complaints</span>
+            <div class="pagination-btns">
+              <button class="pag-btn">Previous</button>
+              <button class="pag-btn">Next</button>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -608,36 +562,24 @@
       <!-- Stats -->
       <div class="reports-stat-grid">
         <div class="stat-card">
-          <div class="stat-card-top">
-            <div class="stat-icon">🗑</div>
-            <span class="stat-badge badge-green">↑ 5.2%</span>
-          </div>
-          <div class="stat-value">1,284</div>
-          <div class="stat-label">Total Waste Collected (Tons)</div>
+          <div class="stat-card-top"><div class="stat-icon">🗑</div><span class="stat-badge badge-green">Live</span></div>
+          <div class="stat-value" id="rpt_total_bins">—</div>
+          <div class="stat-label">Total Bins</div>
         </div>
         <div class="stat-card">
-          <div class="stat-card-top">
-            <div class="stat-icon blue-icon">💧</div>
-            <span class="stat-badge badge-red">↓ 2.1%</span>
-          </div>
-          <div class="stat-value">64%</div>
+          <div class="stat-card-top"><div class="stat-icon blue-icon">📊</div><span class="stat-badge badge-blue">Live</span></div>
+          <div class="stat-value" id="rpt_avg_fill">—</div>
           <div class="stat-label">Avg. Fill Level</div>
         </div>
         <div class="stat-card">
-          <div class="stat-card-top">
-            <div class="stat-icon" style="background:#f3e8ff">👷</div>
-            <span class="stat-badge badge-green">↑ 1.5%</span>
-          </div>
-          <div class="stat-value">89.2%</div>
-          <div class="stat-label">Worker Efficiency</div>
+          <div class="stat-card-top"><div class="stat-icon red-icon">🚨</div><span class="stat-badge badge-red">Live</span></div>
+          <div class="stat-value" id="rpt_alerts">—</div>
+          <div class="stat-label">Active Alerts</div>
         </div>
         <div class="stat-card">
-          <div class="stat-card-top">
-            <div class="stat-icon yellow-icon">⚠</div>
-            <span class="stat-badge badge-gray">↓ 10%</span>
-          </div>
-          <div class="stat-value">12</div>
-          <div class="stat-label">Active Complaints</div>
+          <div class="stat-card-top"><div class="stat-icon yellow-icon">⚠</div><span class="stat-badge badge-gray">Live</span></div>
+          <div class="stat-value" id="rpt_open_comp">—</div>
+          <div class="stat-label">Open Complaints</div>
         </div>
       </div>
 
@@ -726,6 +668,60 @@
   </main>
 </div>
 
+<!-- ===== COMPLAINT SUBMIT MODAL (bottom of page, shown via JS) ===== -->
+<div id="complaintModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:12px;padding:28px;width:min(480px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.25)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <h2 style="font-size:1.1rem;font-weight:700">Submit a Complaint</h2>
+      <button id="closeComplaintModal" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#64748b">✕</button>
+    </div>
+    <form id="complaintForm">
+      <div class="form-group" style="margin-bottom:14px">
+        <label class="form-label">Your Name (optional)</label>
+        <input id="cf_name" type="text" class="search-input" style="width:100%;padding:8px 12px" placeholder="Anonymous" />
+      </div>
+      <div class="form-group" style="margin-bottom:14px">
+        <label class="form-label">Location *</label>
+        <input id="cf_location" type="text" class="search-input" style="width:100%;padding:8px 12px" placeholder="e.g. Central Park, Gate 3" required />
+      </div>
+      <div class="form-group" style="margin-bottom:14px">
+        <label class="form-label">Issue Category *</label>
+        <select id="cf_category" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px" required>
+          <option value="">Select…</option>
+          <option>Overflowing Bin</option>
+          <option>Damaged Equipment</option>
+          <option>Illegal Dumping</option>
+          <option>Missed Pickup</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:20px">
+        <label class="form-label">Description</label>
+        <textarea id="cf_desc" rows="3" class="search-input" style="width:100%;padding:8px 12px;resize:vertical" placeholder="Describe the issue…"></textarea>
+      </div>
+      <button type="submit" class="btn-green" style="width:100%">Submit Complaint</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Open/close complaint modal
+  document.querySelectorAll('.btn-new-complaint, [data-action=new-complaint]').forEach(b =>
+    b.addEventListener('click', () => { document.getElementById('complaintModal').style.display='flex'; })
+  );
+  document.getElementById('closeComplaintModal')?.addEventListener('click', () => {
+    document.getElementById('complaintModal').style.display='none';
+  });
+  // Wire "+ New Ticket" button in complaints page
+  document.querySelectorAll('.btn-green').forEach(btn => {
+    if (btn.textContent.includes('New Ticket')) {
+      btn.classList.add('btn-new-complaint');
+      btn.addEventListener('click', () => document.getElementById('complaintModal').style.display='flex');
+    }
+  });
+</script>
+
 <script src="app.js"></script>
+<script src="app2.js"></script>
 </body>
 </html>
