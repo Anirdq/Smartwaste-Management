@@ -41,6 +41,25 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // ── MARK BIN AS COLLECTED ─────────────────────────────────────
+  const markBtn = document.getElementById('markCollectedBtn');
+  if (markBtn) {
+    markBtn.addEventListener('click', async () => {
+      const binId = document.getElementById('detailBinId')?.textContent?.replace('Bin Details', '')?.replace(':', '')?.trim();
+      if (!binId || binId === 'Bin Details') { toast('Select a bin first', 'error'); return; }
+      const res = await PUT('/api/bins/' + binId + '/update', { fill_level: 0, status: 'empty' });
+      if (res && res.success) {
+        toast(`✅ Bin ${binId} marked as collected`);
+        document.getElementById('detailPct').textContent = '0%';
+        const thumb = document.getElementById('fillThumbPos');
+        if (thumb) thumb.style.right = '100%';
+        // The WebSocket event will automatically update the table and map
+      } else {
+        toast('❌ Failed to update bin');
+      }
+    });
+  }
+
   // ── CLOSE BIN DETAIL PANEL ────────────────────────────────────
   const closePanel = document.getElementById('closeBinPanel');
   if (closePanel) {
@@ -295,7 +314,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── SETTINGS BUTTON ───────────────────────────────────────────
   document.querySelector('.settings-btn')?.addEventListener('click', () => {
-    toast('⚙ Settings panel coming soon!');
+    if (window.currentUser) {
+      document.getElementById('settingsName').value = window.currentUser.name || '';
+      document.getElementById('settingsEmail').value = window.currentUser.email || '';
+      document.getElementById('settingsPassword').value = '';
+    }
+    const modal = document.getElementById('settingsModal');
+    if (modal) modal.style.display = 'flex';
   });
 
   // ── PAGE-LEVEL DATA LOADING ───────────────────────────────────
@@ -343,6 +368,28 @@ document.addEventListener('DOMContentLoaded', () => {
     if (type === 'NEW_COMPLAINT' || type === 'COMPLAINT_RESOLVED') {
       loadComplaintStats();
     }
+    if (type === 'TRUCK_MOVED') {
+      const routeMapEl = document.getElementById('routeMap');
+      const rmap = routeMapEl?._leafletMap;
+      if (rmap && window.L) {
+        if (!window.truckMarkers) window.truckMarkers = {};
+        let marker = window.truckMarkers[payload.id];
+        if (!marker) {
+          marker = L.circleMarker([payload.lat, payload.lng], { radius:10, fillColor:'#f59e0b', color:'#fff', weight:2, fillOpacity:1 }).addTo(rmap);
+          marker.bindPopup(`<b>${payload.id}</b><br>Progress: ${payload.progress}%`);
+          window.truckMarkers[payload.id] = marker;
+        } else {
+          marker.setLatLng([payload.lat, payload.lng]);
+          marker.setPopupContent(`<b>${payload.id}</b><br>Progress: ${payload.progress}%`);
+        }
+      }
+      // Also update the UI list if open
+      if (document.getElementById('page-routes')?.classList.contains('active') && window.loadTrucksAndRoutes) {
+        // Debounce truck updates so we don't spam the DOM
+        clearTimeout(window.truckUpdateTimer);
+        window.truckUpdateTimer = setTimeout(window.loadTrucksAndRoutes, 1000);
+      }
+    }
   };
 
   // ── BIN DATA STATUS ATTRIBUTE for filter ─────────────────────
@@ -357,4 +404,160 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     };
   }
+
+  // ── LOAD ANALYTICS CHARTS ─────────────────────────────────────
+  async function loadAnalyticsData() {
+    const res = await GET('/api/analytics/history');
+    if (!res) return;
+    
+    // 1. Update Daily Bar Chart
+    const bars = document.querySelectorAll('.bar-chart .bar');
+    if (bars.length === 7 && res.daily) {
+      const maxDaily = Math.max(...res.daily, 1);
+      res.daily.forEach((val, i) => {
+        const heightPct = (val / maxDaily) * 100;
+        bars[i].style.height = heightPct + '%';
+        bars[i].setAttribute('title', val + ' Tons');
+      });
+    }
+
+    // 2. Update Monthly/Report Line Charts
+    if (window.drawLineChart && res.monthly) {
+      const mSvg = document.getElementById('monthlyTrendSvg');
+      const rSvg = document.getElementById('reportTrendSvg');
+      if (mSvg) mSvg.innerHTML = '';
+      if (rSvg) rSvg.innerHTML = '';
+      if (mSvg) window.drawLineChart('monthlyTrendSvg', res.monthly, '#2d7a3a');
+      if (rSvg) window.drawLineChart('reportTrendSvg', res.monthly, '#2d7a3a');
+    }
+
+    // 3. Update Donut Chart (Distribution)
+    if (window.drawDonut && res.distribution) {
+      let healthy = 0, critical = 0;
+      res.distribution.forEach(d => {
+        if (d.status === 'empty') healthy += d.count;
+        else critical += d.count;
+      });
+      const total = healthy + critical || 1;
+      const dCvs = document.getElementById('donutWasteChart');
+      if (dCvs) {
+        // Since we draw on canvas directly without clearing properly, let's reset it
+        const w = dCvs.width; dCvs.width = w; 
+        window.drawDonut('donutWasteChart', [healthy, critical], ['#2d7a3a', '#ef4444'], total);
+      }
+      
+      const legend = document.querySelector('.chart-legend');
+      if (legend) {
+        legend.innerHTML = `
+          <div><span style="color:#2d7a3a;font-weight:bold">●</span> Healthy (${healthy})</div>
+          <div><span style="color:#ef4444;font-weight:bold">●</span> Attention (${critical})</div>
+        `;
+      }
+    }
+  }
+
+  // ── GLOBAL SEARCH ───────────────────────────────────────────────
+  const searchInputs = document.querySelectorAll('.search-input');
+  searchInputs.forEach(input => {
+    input.addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase().trim();
+      
+      // Search Bins & Complaints Tables
+      document.querySelectorAll('.bin-row').forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+      });
+
+      // Search Alert Cards
+      document.querySelectorAll('.alert-card-item').forEach(card => {
+        card.style.display = card.textContent.toLowerCase().includes(q) ? '' : 'none';
+      });
+      
+      // Search Routes
+      document.querySelectorAll('.route-card').forEach(card => {
+        card.style.display = card.textContent.toLowerCase().includes(q) ? '' : 'none';
+      });
+    });
+  });
+
+  // ── USER PROFILE, DROPDOWN & SETTINGS ────────────────────────
+  window.currentUser = null;
+  async function loadUserProfile() {
+    const res = await GET('/api/auth/me');
+    if (res?.user) {
+      window.currentUser = res.user;
+      const n = document.getElementById('displayAdminName');
+      const i = document.getElementById('displayAdminInitials');
+      const r = document.getElementById('displayAdminRole');
+      if (n) n.textContent = window.currentUser.name;
+      if (r) r.textContent = window.currentUser.role.charAt(0).toUpperCase() + window.currentUser.role.slice(1);
+      if (i) i.textContent = window.currentUser.name.substring(0, 2).toUpperCase();
+    }
+  }
+
+  // Dropdown toggle
+  const menuBtn = document.getElementById('userMenuBtn');
+  const dropdown = document.getElementById('userDropdown');
+  if (menuBtn && dropdown) {
+    menuBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+    });
+    document.addEventListener('click', () => dropdown.style.display = 'none');
+  }
+
+  // Open Settings Modal
+  document.getElementById('openSettingsDropBtn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (window.currentUser) {
+      document.getElementById('settingsName').value = window.currentUser.name;
+      document.getElementById('settingsEmail').value = window.currentUser.email;
+      document.getElementById('settingsPassword').value = '';
+    }
+    const modal = document.getElementById('settingsModal');
+    if (modal) modal.style.display = 'flex';
+  });
+
+  // Close Settings Modal
+  document.getElementById('closeSettingsModal')?.addEventListener('click', () => {
+    document.getElementById('settingsModal').style.display = 'none';
+  });
+
+  // Save Settings
+  document.getElementById('settingsForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('settingsName').value;
+    const email = document.getElementById('settingsEmail').value;
+    const pwd = document.getElementById('settingsPassword').value;
+    
+    const body = { name, email };
+    if (pwd) body.password = pwd;
+
+    const res = await PUT('/api/auth/profile', body);
+    if (res?.success) {
+      toast('✅ ' + res.message);
+      document.getElementById('settingsModal').style.display = 'none';
+      loadUserProfile(); // refresh UI
+    } else {
+      toast('❌ Failed to update profile', 'error');
+    }
+  });
+
+  // Theme Toggle
+  document.getElementById('themeToggleBtn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    document.body.classList.toggle('light-theme');
+    const isLight = document.body.classList.contains('light-theme');
+    toast(isLight ? '💡 Switched to Light Mode' : '🌙 Switched to Dark Mode');
+  });
+
+  // Logout Dropdown
+  document.getElementById('logoutDropBtn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    localStorage.removeItem('swms_token');
+    window.location.href = 'index.html';
+  });
+
+  // Load analytics when on dashboard/analytics tab
+  loadAnalyticsData();
+  loadUserProfile();
 });

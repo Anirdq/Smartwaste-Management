@@ -119,6 +119,24 @@ app.get('/api/auth/me', authenticate, (req, res) => {
   res.json({ user: req.user });
 });
 
+// PUT /api/auth/profile
+app.put('/api/auth/profile', authenticate, (req, res) => {
+  const { name, email, password } = req.body;
+  
+  if (password) {
+    const hash = bcrypt.hashSync(password, 10);
+    db.run('UPDATE users SET name=?, email=?, password=? WHERE id=?', [name, email, hash, req.user.id], function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true, message: 'Profile and password updated' });
+    });
+  } else {
+    db.run('UPDATE users SET name=?, email=? WHERE id=?', [name, email, req.user.id], function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true, message: 'Profile updated' });
+    });
+  }
+});
+
 // ================================================================
 //  BIN ROUTES
 // ================================================================
@@ -142,6 +160,31 @@ app.post('/api/bins/add', authenticate, (req, res) => {
       broadcast('BIN_ADDED', { id, location, fill_level, status, lat, lng });
       res.status(201).json({ success: true, id });
     });
+});
+
+// GET /api/analytics/history (mocked 7-day trend for charts)
+app.get('/api/analytics/history', (req, res) => {
+  db.all('SELECT status, COUNT(*) as count FROM bins GROUP BY status', [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    // Calculate a realistic 7-day trend based on current active alerts
+    db.get('SELECT COUNT(*) as c FROM alerts WHERE resolved=0', (err2, row2) => {
+      const activeAlerts = row2 ? row2.c : 0;
+      // Mock history arrays (Mon-Sun)
+      // Daily Waste (Tons): Last value is current, others are slightly randomized
+      const baseDaily = 120 + activeAlerts * 2; 
+      const dailyWaste = [
+        baseDaily - 15, baseDaily - 5, baseDaily + 10, 
+        baseDaily - 20, baseDaily + 5, baseDaily, baseDaily - 10
+      ];
+      // Monthly Trend
+      const monthlyTrend = [40, 55, 48, 62, 58, 70, 65, 72, 68, 80, 75, 89 + activeAlerts];
+      res.json({
+        daily: dailyWaste,
+        monthly: monthlyTrend,
+        distribution: rows // e.g. [{status:'empty', count:5}, ...]
+      });
+    });
+  });
 });
 
 // GET /api/bins/:id
@@ -397,6 +440,21 @@ function runIoTSimulator() {
 
       // Always broadcast bin updates to connected clients
       broadcast('BIN_UPDATED', { id: bin.id, fill_level: newFill, status: newStatus });
+    });
+  });
+
+  // Simulate Truck Movement
+  db.all('SELECT id, lat, lng, progress FROM trucks WHERE status = "En Route"', [], (err, trucks) => {
+    if (err || !trucks) return;
+    trucks.forEach(t => {
+      if (!t.lat || !t.lng) return;
+      // Jitter lat/lng slightly (approx 20 meters)
+      const newLat = t.lat + (Math.random() - 0.5) * 0.0004;
+      const newLng = t.lng + (Math.random() - 0.5) * 0.0004;
+      const newProg = Math.min(100, t.progress + Math.floor(Math.random() * 3));
+      db.run('UPDATE trucks SET lat=?, lng=?, progress=? WHERE id=?', [newLat, newLng, newProg, t.id], () => {
+        broadcast('TRUCK_MOVED', { id: t.id, lat: newLat, lng: newLng, progress: newProg });
+      });
     });
   });
 }

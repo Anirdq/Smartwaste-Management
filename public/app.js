@@ -7,28 +7,35 @@
 
 'use strict';
 
-// ── AUTH STATE ────────────────────────────────────────────────────────
-const AUTH = {
-  token: localStorage.getItem('swms_token'),
-  user:  JSON.parse(localStorage.getItem('swms_user') || 'null'),
-
-  headers() {
-    return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` };
-  },
-
-  // Redirect to login if no token
-  guard() {
-    if (!this.token && window.location.pathname.includes('dashboard')) {
-      window.location.href = 'index.html';
-    }
-  },
-
-  logout() {
-    localStorage.removeItem('swms_token');
-    localStorage.removeItem('swms_user');
-    window.location.href = 'index.html';
+  // ── ROUTING / AUTH GUARD ────────────────────────────────────────
+  window.AUTH = {
+    token: () => localStorage.getItem('swms_token'),
+    user: null,
+    guard: async function() {
+      if(!this.token()) { window.location.href='index.html'; return; }
+      try {
+        const res = await fetch('/api/auth/me',{headers:{'Authorization':'Bearer '+this.token()}}).then(r=>r.json());
+        if(!res.user) { localStorage.removeItem('swms_token'); window.location.href='index.html'; return; }
+        this.user = res.user;
+        
+        // Role-based redirection if on the wrong page
+        const path = window.location.pathname;
+        if(this.user.role === 'admin' && !path.includes('dashboard.html')) {
+          window.location.href = 'dashboard.html';
+        } else if(this.user.role === 'worker' && !path.includes('worker.html')) {
+          window.location.href = 'worker.html';
+        } else if(this.user.role === 'citizen' && !path.includes('citizen.html')) {
+          window.location.href = 'citizen.html';
+        }
+      } catch(e) { window.location.href='index.html'; }
+    },
+    headers: function() { return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token()}` }; },
+    logout: function() { localStorage.removeItem('swms_token'); window.location.href = 'index.html'; }
+  };
+  // If not on login page, guard it
+  if (!window.location.pathname.endsWith('index.html') && window.location.pathname !== '/' && window.location.pathname !== '/citizen.html') {
+    AUTH.guard();
   }
-};
 
 // ── API HELPERS ───────────────────────────────────────────────────────
 const API = {
@@ -244,7 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function initMaps() {
     const liveMapEl = document.getElementById('liveMap');
     if (liveMapEl && window.L && !liveMapEl._leaflet_id) {
-      const map = L.map('liveMap', { zoomControl:true }).setView([40.7128,-74.006], 11);
+      const map = L.map('liveMap', { zoomControl:true }).setView([13.0827, 80.2707], 12);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'© OpenStreetMap', maxZoom:18 }).addTo(map);
 
       API.get('/api/bins').then(res => {
@@ -263,19 +270,21 @@ document.addEventListener('DOMContentLoaded', () => {
     ['concMap','hotspotMap'].forEach(id => {
       const el = document.getElementById(id);
       if (el && window.L && !el._leaflet_id) {
-        const m = L.map(id, { zoomControl:false, attributionControl:false }).setView([40.7128,-74.006], 11);
+        const m = L.map(id, { zoomControl:false, attributionControl:false }).setView([13.0827, 80.2707], 11);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(m);
       }
     });
 
     const routeMapEl = document.getElementById('routeMap');
     if (routeMapEl && window.L && !routeMapEl._leaflet_id) {
-      const rmap = L.map('routeMap', { zoomControl:true }).setView([40.74,-73.95], 11);
+      const rmap = L.map('routeMap', { zoomControl:true }).setView([13.05, 80.25], 12);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(rmap);
-      const routeA=[[40.7829,-73.9654],[40.7729,-73.9754],[40.7629,-73.9654],[40.7580,-73.9855]];
-      const routeB=[[40.6892,-74.0445],[40.6992,-74.0245],[40.7282,-73.9249]];
+      const routeA=[[13.0827,80.2707],[13.0830,80.2400],[13.0850,80.2101]];
+      const routeB=[[13.0418,80.2341],[13.0450,80.2500],[13.0500,80.2824]];
       L.polyline(routeA,{color:'#3b82f6',weight:4}).addTo(rmap);
       L.polyline(routeB,{color:'#22c55e',weight:4}).addTo(rmap);
+      // Expose to window for app2.js route optimizer animation
+      routeMapEl._leafletMap = rmap;
     }
   }
 
@@ -442,16 +451,16 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ── CHARTS ──────────────────────────────────────────────────────
-  function drawDonut(id, data, colors, total) {
+  window.drawDonut = function(id, data, colors, total) {
     const canvas = document.getElementById(id); if (!canvas) return;
     const ctx=canvas.getContext('2d'), cx=canvas.width/2, cy=canvas.height/2, r=38, lw=14;
     let a=-Math.PI/2;
     data.forEach((val,i)=>{ const s=(val/total)*2*Math.PI; ctx.beginPath(); ctx.arc(cx,cy,r,a,a+s); ctx.strokeStyle=colors[i]; ctx.lineWidth=lw; ctx.stroke(); a+=s; });
     ctx.beginPath(); ctx.arc(cx,cy,r-lw/2,0,2*Math.PI); ctx.fillStyle='#fff'; ctx.fill();
   }
-  drawDonut('donutWasteChart',[65,35],['#2d7a3a','#c8e6c9'],100);
+  // Static calls removed, see app2.js for dynamic charts
 
-  function drawLineChart(id, data, color) {
+  window.drawLineChart = function(id, data, color) {
     const svg=document.getElementById(id); if(!svg) return;
     const W=svg.clientWidth||280, H=svg.clientHeight||110, p=10;
     const max=Math.max(...data), min=Math.min(...data), xStep=(W-p*2)/(data.length-1);
@@ -463,8 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
     area.setAttribute('points',`${p},${H} ${pts} ${p+(data.length-1)*xStep},${H}`); area.setAttribute('fill',color); area.setAttribute('fill-opacity','0.08');
     svg.insertBefore(area,poly);
   }
-  drawLineChart('monthlyTrendSvg',[12,19,15,22,18,25,28,24,30,27,35,42],'#2d7a3a');
-  drawLineChart('reportTrendSvg', [40,55,48,62,58,70,65,72,68,80,75,89],'#2d7a3a');
+  // Static calls removed, see app2.js for dynamic charts
 
   // ── SEARCH ──────────────────────────────────────────────────────
   document.querySelectorAll('.search-input').forEach(input => {

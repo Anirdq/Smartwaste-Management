@@ -66,15 +66,21 @@
       <button class="header-icon-btn" title="Alerts">
         🔔 <span class="notif-dot"></span>
       </button>
-      <div class="user-menu">
-        <div class="user-avatar">AR</div>
+      <div class="user-menu" id="userMenuBtn" style="position:relative;cursor:pointer">
+        <div class="user-avatar" id="displayAdminInitials">--</div>
         <div class="user-info">
-          <span class="user-name">Alex Rivera</span>
-          <span class="user-role">System Admin</span>
+          <span class="user-name" id="displayAdminName">Loading...</span>
+          <span class="user-role" id="displayAdminRole">Admin</span>
         </div>
         <span>▾</span>
+        <!-- Dropdown Menu -->
+        <div class="user-dropdown-menu" id="userDropdown" style="display:none;position:absolute;top:100%;right:0;background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:8px 0;width:180px;box-shadow:0 10px 25px rgba(0,0,0,0.2);z-index:100;margin-top:10px;">
+          <a href="#" class="dropdown-item" id="openSettingsDropBtn" style="display:block;padding:10px 16px;color:var(--text-main);text-decoration:none;font-size:0.9rem;">⚙ Settings / Profile</a>
+          <a href="#" class="dropdown-item" id="themeToggleBtn" style="display:block;padding:10px 16px;color:var(--text-main);text-decoration:none;font-size:0.9rem;">🌗 Toggle Theme</a>
+          <hr style="border:none;border-top:1px solid var(--border);margin:8px 0;">
+          <a href="#" class="dropdown-item" id="logoutDropBtn" style="display:block;padding:10px 16px;color:#ef4444;text-decoration:none;font-size:0.9rem;">⏻ Logout</a>
+        </div>
       </div>
-      <button id="logoutBtn" class="btn-outline" style="margin-left:8px;padding:6px 14px;font-size:.8rem">⏻ Logout</button>
     </div>
   </header>
 
@@ -337,6 +343,9 @@
               </div>
             </div>
 
+            <div style="display:flex;gap:10px;margin-bottom:10px">
+              <button class="btn-green" id="markCollectedBtn" style="flex:1">✅ Mark Collected</button>
+            </div>
             <button class="btn-emergency" id="emergencyPickupBtn">⚠ Assign Emergency Pickup</button>
             <button class="btn-edit" id="editMaintenanceBtn">✏ Edit Maintenance Log</button>
           </div>
@@ -721,7 +730,32 @@
   });
 </script>
 
-<script src="app.js"></script>
-<script src="app2.js"></script>
+  <!-- ====== SETTINGS MODAL ====== -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">⚙ System Settings & Profile</div>
+        <button class="modal-close" id="closeSettingsModal">✕</button>
+      </div>
+      <form id="settingsForm" style="display:flex;flex-direction:column;gap:15px;padding-top:10px">
+        <div>
+          <label style="display:block;margin-bottom:6px;font-size:.85rem;color:var(--text-secondary)">Full Name</label>
+          <input type="text" id="settingsName" class="form-input" style="width:100%;padding:10px;border-radius:6px;border:1px solid var(--border);background:var(--bg-body);color:var(--text-main)" required>
+        </div>
+        <div>
+          <label style="display:block;margin-bottom:6px;font-size:.85rem;color:var(--text-secondary)">Email Address</label>
+          <input type="email" id="settingsEmail" class="form-input" style="width:100%;padding:10px;border-radius:6px;border:1px solid var(--border);background:var(--bg-body);color:var(--text-main)" required>
+        </div>
+        <div>
+          <label style="display:block;margin-bottom:6px;font-size:.85rem;color:var(--text-secondary)">New Password (Leave blank to keep current)</label>
+          <input type="password" id="settingsPassword" class="form-input" style="width:100%;padding:10px;border-radius:6px;border:1px solid var(--border);background:var(--bg-body);color:var(--text-main)">
+        </div>
+        <button type="submit" class="btn-green" style="margin-top:10px">💾 Save Changes</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script src="app2.js"></script>
 </body>
 </html>

@@ -71,7 +71,17 @@
         <form id="registerForm">
           <div class="form-group">
             <label class="form-label">Full Name</label>
-            <div class="input-wrap"><input id="regName" type="text" placeholder="Your name" required /></div>
+            <div class="input-wrap"><input type="text" id="regName" placeholder="Your Full Name" required></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Role</label>
+            <div class="input-wrap">
+              <select id="regRole" style="width:100%;border:none;background:transparent;outline:none;padding-right:10px;">
+                <option value="admin">System Admin</option>
+                <option value="worker">Field Worker</option>
+                <option value="citizen">Citizen</option>
+              </select>
+            </div>
           </div>
           <div class="form-group">
             <label class="form-label">Email</label>
@@ -80,16 +90,6 @@
           <div class="form-group">
             <label class="form-label">Password</label>
             <div class="input-wrap"><input id="regPass" type="password" placeholder="Min 6 chars" required /></div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Role</label>
-            <div class="input-wrap">
-              <select id="regRole">
-                <option value="citizen">Citizen</option>
-                <option value="worker">Field Worker</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
           </div>
           <button type="submit" class="btn-primary">Create Account</button>
         </form>
@@ -165,9 +165,9 @@
     document.getElementById('registerForm').addEventListener('submit', async e => {
       e.preventDefault();
       const name     = document.getElementById('regName').value.trim();
-      const email    = document.getElementById('regEmail').value.trim();
+      const email = document.getElementById('regEmail').value;
       const password = document.getElementById('regPass').value;
-      const role     = document.getElementById('regRole').value;
+      const role = document.getElementById('regRole').value;
 
       try {
         const res  = await fetch('/api/auth/register', {

@@ -1314,3 +1314,20 @@ h3 { font-size: 1.05rem; font-weight: 600; }
   max-width: calc(100vw - 48px);
 }
 .toast.show { opacity: 1; transform: translateY(0); }
+
+
+/* Dropdown */
+.dropdown-item:hover { background: var(--bg-body); }
+/* Light Theme */
+body.light-theme { --bg-body: #f1f5f9; --bg-panel: #ffffff; --text-main: #1e293b; --text-secondary: #475569; --border: #e2e8f0; }
+body.light-theme .sidebar { background: #ffffff; border-right: 1px solid var(--border); }
+body.light-theme .main-header { background: #ffffff; border-bottom: 1px solid var(--border); }
+
+
+/* Modal Styles */
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+.modal-content { background: var(--bg-panel); border-radius: 12px; padding: 24px; width: 90%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 1px solid var(--border); }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.modal-title { font-size: 1.2rem; font-weight: 600; color: var(--text-main); }
+.modal-close { background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; }
+.modal-close:hover { color: var(--text-main); }

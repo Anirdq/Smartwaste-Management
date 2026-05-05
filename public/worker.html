@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>SWMS Worker – Field Portal</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    body { background: var(--bg-body); padding-bottom: 20px; }
+    .worker-container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header-mobile { display: flex; justify-content: space-between; align-items: center; background: var(--bg-panel); padding: 15px 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; }
+    .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--green-primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+    .worker-map { height: 300px; border-radius: 12px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 20px; }
+    .bin-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+    .bin-details h4 { margin: 0 0 5px 0; color: var(--text-main); }
+    .bin-details p { margin: 0; color: var(--text-secondary); font-size: 0.9rem; }
+    .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
+    .btn-collect { background: var(--green-primary); color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+    .btn-collect:hover { opacity: 0.9; }
+  </style>
+</head>
+<body>
+  <div class="worker-container">
+    <div class="header-mobile">
+      <div>
+        <h2 style="margin:0; font-size:1.2rem; color:var(--text-main)">Field Operations</h2>
+        <div style="font-size:0.85rem; color:var(--text-muted)" id="workerNameDisplay">Loading...</div>
+      </div>
+      <div style="display:flex; gap:10px">
+        <button class="btn-outline" id="logoutBtn" style="padding:6px 12px;font-size:0.8rem">Logout</button>
+      </div>
+    </div>
+
+    <div class="worker-map" id="workerMap"></div>
+
+    <h3 style="color:var(--text-main); margin-bottom:15px">Priority Collection Route</h3>
+    <div id="binsContainer">
+      <p style="color:var(--text-muted); text-align:center">Loading route...</p>
+    </div>
+  </div>
+
+  <div id="globalToast" class="toast"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Setup Map
+      const map = L.map('workerMap').setView([13.0827, 80.2707], 13);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
+
+      // Load Profile
+      try {
+        const user = await API.get('/api/auth/me');
+        if (user && user.user) {
+          document.getElementById('workerNameDisplay').textContent = user.user.name;
+        }
+      } catch(e) {}
+
+      document.getElementById('logoutBtn').addEventListener('click', () => {
+        AUTH.logout();
+      });
+
+      // Load Bins requiring collection
+      async function loadBins() {
+        const res = await API.get('/api/bins');
+        if (!res || !res.data) return;
+        const fullBins = res.data.filter(b => b.fill_level >= 50).sort((a,b) => b.fill_level - a.fill_level);
+        
+        const container = document.getElementById('binsContainer');
+        if (fullBins.length === 0) {
+          container.innerHTML = '<p style="color:var(--text-muted); text-align:center">All clear! No priority bins right now.</p>';
+          return;
+        }
+
+        container.innerHTML = '';
+        const coords = [];
+        fullBins.forEach(b => {
+          const isCritical = b.fill_level >= 80;
+          const bg = isCritical ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)';
+          const color = isCritical ? '#ef4444' : '#f59e0b';
+          coords.push([b.lat, b.lng]);
+
+          // Add Map Marker
+          L.circleMarker([b.lat, b.lng], { radius: 8, fillColor: color, color: '#fff', weight: 2, fillOpacity: 1 })
+            .addTo(map).bindPopup(`<b>${b.location}</b><br>${b.fill_level}% Full`);
+
+          const card = document.createElement('div');
+          card.className = 'bin-card';
+          card.innerHTML = `
+            <div class="bin-details">
+              <h4>${b.location}</h4>
+              <p>ID: ${b.id} &bull; <span class="status-badge" style="background:${bg};color:${color}">${b.fill_level}% FULL</span></p>
+            </div>
+            <button class="btn-collect" data-id="${b.id}">Mark Collected</button>
+          `;
+          container.appendChild(card);
+        });
+
+        if (coords.length > 0) {
+          L.polyline(coords, { color: '#6366f1', weight: 4, dashArray: '8,4' }).addTo(map);
+          map.fitBounds(coords, { padding: [20, 20] });
+        }
+
+        document.querySelectorAll('.btn-collect').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            const id = e.target.getAttribute('data-id');
+            const upd = await API.put('/api/bins/' + id + '/update', { fill_level: 0, status: 'empty' });
+            if (upd && upd.success) {
+              const t = document.getElementById('globalToast');
+              t.textContent = '✅ Bin collected!';
+              t.className = 'toast show';
+              setTimeout(() => t.classList.remove('show'), 3000);
+              e.target.closest('.bin-card').remove();
+            }
+          });
+        });
+      }
+
+      loadBins();
+
+      // Listen to WS
+      connectWS();
+      window.handleWsEvent = function(type, payload) {
+        if (type === 'BIN_UPDATED') {
+          // Simplistic real-time reload for worker
+          setTimeout(loadBins, 1000);
+        }
+      };
+    });
+  </script>
+</body>
+</html>

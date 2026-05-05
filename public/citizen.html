@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chennai Smart Waste - Citizen Portal</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { background: var(--bg-body); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; font-family: 'Inter', sans-serif; }
+    .citizen-container { width: 100%; max-width: 800px; background: var(--bg-panel); padding: 40px; border-radius: 16px; border: 1px solid var(--border); text-align: center; }
+    .hero-icon { font-size: 3rem; margin-bottom: 20px; }
+    h1 { margin-bottom: 10px; color: var(--text-main); font-weight: 600; font-size: 1.8rem; }
+    p.desc { color: var(--text-secondary); margin-bottom: 30px; font-size: 1rem; }
+    .search-box { display: flex; gap: 10px; margin-bottom: 30px; }
+    .search-box input { flex: 1; padding: 14px 20px; font-size: 1rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-body); color: var(--text-main); }
+    .search-box input:focus { border-color: var(--primary); outline: none; }
+    .btn-search { background: var(--primary); color: white; padding: 14px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+    .btn-search:hover { background: #23632f; }
+    .results { text-align: left; }
+    .schedule-card { background: var(--bg-body); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+    .loc-name { font-weight: 600; font-size: 1.1rem; color: var(--text-main); margin-bottom: 5px; }
+    .sched-time { color: var(--text-secondary); font-size: 0.9rem; }
+    .status-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+    .status-empty { background: rgba(34,197,94,0.1); color: #22c55e; border: 1px solid rgba(34,197,94,0.2); }
+    .status-medium { background: rgba(245,158,11,0.1); color: #f59e0b; border: 1px solid rgba(245,158,11,0.2); }
+    .status-full { background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); }
+    .btn-report { background: transparent; color: var(--text-main); border: 1px solid var(--border); padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: 0.2s; font-size: 0.85rem; }
+    .btn-report:hover { border-color: var(--primary); color: var(--primary); }
+    
+    /* Toast */
+    #citizenToast { position: fixed; bottom: 20px; right: 20px; padding: 12px 24px; border-radius: 8px; background: #fff; color: #000; font-weight: 500; font-size: 0.9rem; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    #citizenToast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <div class="citizen-container">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 30px;">
+      <h2 style="margin:0; font-size:1.2rem; color:var(--text-main)">Citizen Portal</h2>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span id="citizenName" style="font-size:0.9rem; color:var(--text-secondary)"></span>
+        <button id="logoutBtn" style="background:transparent; border:1px solid var(--border); color:var(--text-main); padding:6px 12px; border-radius:6px; cursor:pointer">Logout</button>
+      </div>
+    </div>
+    
+    <div class="hero-icon">🌱</div>
+    <h1>Chennai Smart Waste Schedule</h1>
+    <p class="desc">Find waste collection timings for your locality and report issues instantly.</p>
+    
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Search by location (e.g., T Nagar, Marina Beach)">
+      <button class="btn-search" id="searchBtn">Find Schedule</button>
+    </div>
+
+    <div class="results" id="resultsContainer">
+      <!-- Results injected here -->
+      <p style="text-align: center; color: var(--text-muted); margin-top: 20px;">Enter your location to see schedules.</p>
+    </div>
+    
+    <div style="margin-top:40px; border-top:1px solid var(--border); padding-top:20px;">
+    </div>
+  </div>
+
+  <div id="citizenToast"></div>
+
+  <script src="app.js"></script>
+  <script>
+    function showToast(msg) {
+      const t = document.getElementById('citizenToast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    // Default schedules mapping (simulated since DB only has bin status)
+    const getSchedule = (location) => {
+      const days = ['Monday & Thursday, 07:00 AM', 'Tuesday & Friday, 06:30 AM', 'Wednesday & Saturday, 08:00 AM', 'Daily, 05:00 AM'];
+      // Hash string to pick a consistent schedule
+      let hash = 0;
+      for (let i = 0; i < location.length; i++) hash = location.charCodeAt(i) + ((hash << 5) - hash);
+      return days[Math.abs(hash) % days.length];
+    };
+
+    async function searchBins() {
+      const query = document.getElementById('searchInput').value.trim().toLowerCase();
+      const container = document.getElementById('resultsContainer');
+      
+      if (!query) {
+        container.innerHTML = '<p style="text-align: center; color: var(--text-muted); margin-top: 20px;">Please enter a location.</p>';
+        return;
+      }
+
+      container.innerHTML = '<p style="text-align: center; color: var(--text-secondary); margin-top: 20px;">Searching...</p>';
+
+      try {
+        const res = await fetch('/api/bins').then(r => r.json());
+        if (!res?.data) throw new Error('API Error');
+        
+        const matches = res.data.filter(b => b.location.toLowerCase().includes(query));
+        
+        if (matches.length === 0) {
+          container.innerHTML = '<p style="text-align: center; color: var(--text-muted); margin-top: 20px;">No public bins found in this exact area.</p>';
+          return;
+        }
+
+        container.innerHTML = matches.map(b => `
+          <div class="schedule-card">
+            <div>
+              <div class="loc-name">📍 ${b.location}</div>
+              <div class="sched-time">📅 Next Pickup: <b>${getSchedule(b.location)}</b></div>
+              <div style="margin-top:8px">
+                <span class="status-badge status-${b.status}">${b.status === 'empty' ? 'Healthy' : b.status === 'medium' ? 'Half Full' : 'Critical'} (${b.fill_level}%)</span>
+              </div>
+            </div>
+            <div>
+              <button class="btn-report" onclick="reportIssue('${b.location}')">⚠ Report Issue</button>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        container.innerHTML = '<p style="text-align: center; color: #ef4444; margin-top: 20px;">Error connecting to SWMS system.</p>';
+      }
+    }
+
+    document.getElementById('searchBtn').addEventListener('click', searchBins);
+    document.getElementById('searchInput').addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') searchBins();
+    });
+
+    window.reportIssue = async (location) => {
+      const desc = prompt(`Describe the issue at ${location} (e.g., Overflowing, Damaged):`);
+      if (!desc) return;
+      try {
+        const res = await API.post('/api/complaints', {
+          citizen_name: AUTH.user ? AUTH.user.name : 'Concerned Citizen',
+          location: location,
+          issue_category: 'Citizen Report',
+          issue_desc: desc
+        });
+        
+        if (res.data) showToast('✅ Report submitted successfully.');
+        else showToast('❌ Failed to submit report.');
+      } catch (e) {
+        showToast('❌ Network error.');
+      }
+    };
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const res = await API.get('/api/auth/me');
+        if (res && res.user) {
+          document.getElementById('citizenName').textContent = 'Hi, ' + res.user.name.split(' ')[0];
+        }
+      } catch(e) {}
+
+      document.getElementById('logoutBtn').addEventListener('click', () => {
+        AUTH.logout();
+      });
+    });
+  </script>
+</body>
+</html>
